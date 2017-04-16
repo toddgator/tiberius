@@ -1,0 +1,1 @@
+../../../library/rhel7/S08-persistent-bash-history.sh

@@ -1,0 +1,1 @@
+../../../library/rhel7/S52-lynis.sh
