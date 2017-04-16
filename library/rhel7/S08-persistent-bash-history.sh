@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# Configuring a few items for the default Bash profile.
+
+# Creates 2 new functions in /etc/profile
 cat << \EOF >> /etc/profile
 log_bash_persistent_history()
 {
@@ -32,6 +36,7 @@ EOF
 #test "$(ps -ocommand= -p $PPID | awk '{print $1}')" == 'script' || (TERM=dumb script -q -f $HOME/logs/$(date +"%d-%b-%y_%H-%M-%S")_shell.log)
 #EOF
 
+# Install 'log-user-session' utility
 cd /tmp/
 wget "http://thirdparty.thig.com/log-user-session/log-user-session.zip"
 unzip log-user-session.zip
@@ -47,7 +52,7 @@ echo "ForceCommand log-user-session" >> /etc/ssh/sshd_config
 
 make install
 
-
+# Create viewks (shortcut to viewing the kickstart log)
 cat << \EOF > /bin/viewks
 #!/bin/bash
 egrep -v "\.\.\.\.\.\.\.|inflating|extracting|creating|^jdk1.|^apache-tomcat-" /root/ks-post.log | grep --color=always -E '^|Attempting to run | saved ' | less -r

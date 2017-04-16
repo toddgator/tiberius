@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# Adding default THIG login disclaimer.
 
 cat << EOF > /etc/issue.net
 

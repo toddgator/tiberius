@@ -1,5 +1,6 @@
 #!/bin/bash
-
+#
+# Configures ntp for system clock
 
 cat << EOF > /etc/ntp.conf
 # Tower Hill time source - currently (2016-10-05) two A records pointing to ADC01 and ADC02

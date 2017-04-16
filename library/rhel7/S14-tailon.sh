@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# From: http://tailon.readthedocs.io/en/latest/
+# Installs tailon
+#		* http://tailon.readthedocs.io/en/latest/
 # 
 # Requires Python v2.7 or above and can be installed from dev from github.
 . /etc/sdi/thig-settings

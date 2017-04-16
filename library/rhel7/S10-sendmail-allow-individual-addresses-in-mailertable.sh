@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# Installs sendmail-cf and configures sendmail appropriately.
+
 # Taken from https://groups.google.com/forum/#!topic/comp.mail.sendmail/nJYw17-ik_I
 yum -y install sendmail-cf
 rm -f /etc/mail/sendmail.cf

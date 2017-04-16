@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# Installing the typical THIG default store.
+
 cat << EOF >> /etc/pki/tls/certs/ca-bundle.crt
 -----BEGIN CERTIFICATE-----
 MIIE0DCCA7igAwIBAgIBBzANBgkqhkiG9w0BAQsFADCBgzELMAkGA1UEBhMCVVMx

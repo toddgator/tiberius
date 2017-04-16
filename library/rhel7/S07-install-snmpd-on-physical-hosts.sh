@@ -1,9 +1,15 @@
 #!/bin/bash
+#
+# Installs/Configures snmp for physical rhel7 hosts.
+
+# exit the script if lspci reports identifies this host as a virtual machine
 lspci | grep -i vmware && exit
 
+# install snmp related packages
 yum -y install net-snmp net-snmp-utils
 mv /etc/snmp/snmpd.conf /etc/snmp/snmpd.conf.orig
 
+# Create our default snmpd.conf configuration
 cat << \EOF >> /etc/snmp/snmpd.conf
 # Map 'idv90we3rnov90wer' community to the 'ConfigUser'
 # Map '209ijvfwer0df92jd' community to the 'AllUser'

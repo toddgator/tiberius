@@ -1,14 +1,13 @@
 #!/bin/bash
+#
+# Installs/Configures Nessus agent.
 
 . /etc/sdi/thig-settings
 
-
 rpm -Uvh http://thirdparty.thig.com/tenable/agents/${OSANDVERSION}/NessusAgent-${OSANDVERSION}-latest.rpm
-
 
 # Remove any old associations
 # CMH: fairly certain this doesn't work though
-
 /opt/nessus_agent/sbin/nessuscli agent unlink --force
 sleep 5
 
@@ -82,11 +81,7 @@ case $ENVIRONMENT in
     ;;
 esac
 
-
-
 /opt/nessus_agent/sbin/nessuscli agent link --key=2b1a12aab851259dd90a315f88a5543584ebd4733892788fbccb1560a7b74737 --name=$(hostname) --groups="${agent_group}" --host=nflgnvtnm01.thig.com --port=8834
-
 
 /sbin/service nessusagent start
 chkconfig nessusagent on
-

@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# Applies some VMWare console configuration.
+
 echo "GRUB_GFXMODE=1280x800x32" >> /etc/default/grub
 echo "GRUB_GFXPAYLOAD_LINUX=keep" >> /etc/default/grub
 echo "GRUB_TERMINAL=gfxterm" >> /etc/default/grub

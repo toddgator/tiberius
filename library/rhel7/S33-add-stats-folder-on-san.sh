@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+#	Creates mount points and then adds the relevant configuration lines to 
+# /etc/fstab so the mounts will	persist over reboots.
+
 . /etc/sdi/thig-settings
 
 if [[ $ENVIRONMENT == "dmz" ]]; then exit; fi

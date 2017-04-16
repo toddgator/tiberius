@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# Install/Configures Check_MK agent
+
 VERSION=1.0
 . /etc/sdi/thig-settings
 

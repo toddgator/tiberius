@@ -15,5 +15,3 @@ exit
 #yum -y --disablerepo "*" --enablerepo "lynis" install lynis
 
 #Secure copy the audit report to a central server: lms01?
-
-
