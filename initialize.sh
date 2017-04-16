@@ -12,6 +12,11 @@
 #     in order for the respective OS lsb_release ID to be reported during
 
 
+# Provider codes - GLOBALS
+PROVIDER_AMAZON="aws"
+PROVIDER_THIG="thig"
+
+
 # Determine the operating system of the virtual machine and return an ID
 # accordingly.
 #
@@ -47,32 +52,76 @@ get_os_code () {
   esac
 }
 
+# Function determines the Virtual Machine provider based on the hostname.
+# 
+# AWS style hostname: aws-dev-web-01.aws.thig.com
+# THIG style hostname: sflgnvrpm01.thig.com
+# 
+# Arguments: None
+# Returns: String
+get_provider () {
+	local servername="$(hostname -s)"
+	
+	# If the hostname contains hyphens then we can consider it AWS provided,
+	# while if it is an 11 character string w/out hyphens it's THIG provided.
+	if [[ ${servername} == *"-"* ]]; then
+		provider="${PROVIDER_AMAZON}"
+	else
+		provider="${PROVIDER_THIG}"
+	fi
+	
+	echo ${provider}
+}
 
+
+# Derives our environment configs from the hostname and writes out the relevant
+# values to a config file.
+#
+# Arguments: None
+# Returns: None
 export_thig_config () {
-  # Create a default THIG configuration directory
-  mkdir -p /etc/thig
+	if [[ ${provider} == ${PROVIDER_AMAZON} ]]; then
 
-  # THIG hostname convention:
-  #   ${locationCode}-${appRole}-${environment}-${node}
-  #
-  #   example: aws-www-prod-01
-  #
-  # The hostname is assigned by either the kickstart configuration when building
-  # a new VM or from the cloud-init configuration when starting a new EC2. Since
-  # that's already assumed to be setup properly during the OS installation we
-  # can now determine the necessary environment variables needed for our build.
-  local servername="$(hostname -s)"
-  local os="$(get_operating_system)"
+    # Create a default THIG configuration directory for aws servers
+    mkdir -p /etc/thig
 
-  # Write our system configuration variables to '/etc/thig/thig-settings' for
-  # future use by other scripts and/or projects.
-  cat << EOF > /etc/thig/thig-settings
+    # The hostname is assigned by the cloud-init boot configuration executed
+    # when an ec2 is started. From that we can determine the environment
+    # configuration items we'll need to execute the build.
+    #
+    # Expected AWS hostname convention:
+    #   ${locationCode}-${appRole}-${environment}-${node} -> aws-www-prod-01
+    #
+    local servername="$(hostname -s)"
+    local os="$(get_operating_system)"
+    local provider="$(get_provider)"
+
+		# Write our system configuration variables to '/etc/thig/thig-settings' for
+		# future use.
+		cat << EOF > /etc/thig/thig-settings
+export PROVIDER=${provider}
 export ENVIRONMENT=$(echo ${servername} | awk -F- '{print $3}')
 export LOCATIONCODE=$(echo ${servername} | awk -F- '{print $1}')
 export OS=${os}
 export ROLE=$(echo ${servername} | awk -F- '{print $2}')
 export NODE=$(echo ${servername} | awk -F- '{print $4}')
 EOF
+	elif [[ ${provider} == ${PROVIDER_THIG} ]]; then
+	  # Create a default THIG configuration directory for on-prem THIG servers
+	  mkdir -p /etc/sdi
+
+	  # The hostname for on-prem thig servers is configured in the thig Active
+	  # Directory DHCP/DNS configuration. When a VMWare VM comes up it determines
+	  # it's own hostname based on the reverse lookup of it's own ip address
+	  # assigned by DHCP).
+	  # TODO: figure out how to port the kickstart procedure that currently pulls
+	  #   out the env config items from the on-prem hostname which is a little
+	  #   uglier and requires some string slicing since it doesn't have an actual
+	  #   delimiter for the sections of the name.
+	  cat << EOF > /etc/sdi/thig-settings
+
+EOF
+  fi
 }
 
 
@@ -91,8 +140,8 @@ export_thig_config
 # Pulling in the system variables we just exported
 source /etc/thig/thig-settings
 
-# Surrounding the actual script executions in parens so as to redirect output
-# to log file.
+# Surrounding the actual script executions in parens (is this what people are
+# calling them these days??) so as to redirect output to log file.
 (
   if [ "${OS}" = "unknown" ] || [ -z "${OS}" ]; then
     echo "${LOG_TIMESTAMP} - Unable to determine OS type for build; Exiting"
