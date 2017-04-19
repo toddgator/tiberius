@@ -1,1 +1,0 @@
-../../../library/rhel7/S12-ntp.sh

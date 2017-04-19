@@ -1,1 +1,0 @@
-../../../library/rhel7/S95-gcloud.sh

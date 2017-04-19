@@ -1,1 +1,0 @@
-../../../library/rhel7/S07-install-snmpd-on-physical-hosts.sh

@@ -1,1 +1,0 @@
-../../../library/rhel7/S33-add-stats-folder-on-san.sh

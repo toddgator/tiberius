@@ -1,1 +1,0 @@
-../../../library/rhel7/S22-nessus-agent.sh

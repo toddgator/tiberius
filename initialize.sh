@@ -12,7 +12,14 @@
 #     in order for the respective OS lsb_release ID to be reported during
 
 
-# Provider codes - GLOBALS
+# GLOBALS
+THIG_HOME="/opt/thig"
+PROJECT_NAME="tiberius"
+PROJECT_HOME="${THIG_HOME}/${PROJECT_NAME}"
+LOG_FULL_PATH="/var/log/tiberuis-build-output.log"
+LOG_TIMESTAMP="$(date +"%m-%d-%Y %H:%M:%S")"
+
+# GLOBALS - provider codes
 PROVIDER_AMAZON="aws"
 PROVIDER_THIG="thig"
 
@@ -115,9 +122,9 @@ EOF
 	  # it's own hostname based on the reverse lookup of it's own ip address
 	  # assigned by DHCP).
 	  # TODO: figure out how to port the kickstart procedure that currently pulls
-	  #   out the env config items from the on-prem hostname which is a little
-	  #   uglier and requires some string slicing since it doesn't have an actual
-	  #   delimiter for the sections of the name.
+      #   out the env config items from the on-prem hostname which is a little
+      #   uglier and requires some string slicing since it doesn't have an actual
+      #   delimiter for the sections of the name.
 	  cat << EOF > /etc/sdi/thig-settings
 
 EOF
@@ -127,12 +134,6 @@ EOF
 
 # Disable 'nullglob' shell option (to avoid glob matching issues)
 shopt -s nullglob
-
-THIG_HOME="/opt/thig"
-PROJECT_NAME="tiberius"
-PROJECT_HOME="${THIG_HOME}/${PROJECT_NAME}"
-LOG_FULL_PATH="/var/log/tiberuis-build-output.log"
-LOG_TIMESTAMP="$(date +"%m-%d-%Y %H:%M:%S")"
 
 # Generate THIG system configuration variables
 export_thig_config

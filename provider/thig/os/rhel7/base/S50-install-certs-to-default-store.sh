@@ -1,0 +1,1 @@
+../../../../../library/rhel7/S50-install-certs-to-default-store.sh
