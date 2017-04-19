@@ -64,7 +64,7 @@ EOF
 	elif [[ ${provider} == ${PROVIDER_THIG} ]]; then
 	  # Create a default THIG configuration directory for on-prem THIG servers
 	  if [ ! -d ${THIG_ETC_DIR} ]; then
-	    mkdir -p /etc/sdi
+	    mkdir -p ${THIG_ETC_DIR}
 	  fi
 
 	  #TODO: What needs to go here that isn't already in the *.ks boot file??
