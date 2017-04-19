@@ -25,6 +25,11 @@ PROVIDER_THIG="thig"
 PROVIDER_UNKNOWN="unknown"
 
 
+# Derives our environment configs from the hostname and writes out the relevant
+# values to a config file.
+#
+# Arguments: None
+# Returns: None
 export_srvr_config () {
 	if [[ ${provider} == ${PROVIDER_AMAZON} ]]; then
 
@@ -131,11 +136,7 @@ get_thig_env () {
 
 }
 
-# Derives our environment configs from the hostname and writes out the relevant
-# values to a config file.
-#
-# Arguments: None
-# Returns: None
+
 
 
 
