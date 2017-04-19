@@ -24,6 +24,42 @@ PROVIDER_AMAZON="aws"
 PROVIDER_THIG="thig"
 
 
+export_srvr_config () {
+	if [[ ${provider} == ${PROVIDER_AMAZON} ]]; then
+
+    # Create a default THIG configuration directory for aws servers
+    mkdir -p /etc/thig
+
+    # The hostname is assigned by the cloud-init boot configuration executed
+    # when an ec2 is started. From that we can determine the environment
+    # configuration items we'll need to execute the build.
+    #
+    # Expected AWS hostname convention:
+    #   ${locationCode}-${appRole}-${environment}-${node} -> aws-www-prod-01
+    #
+    local servername="$(hostname -s)"
+    local os="$(get_operating_system)"
+    local provider="$(get_provider)"
+
+		# Write our system configuration variables to '/etc/thig/thig-settings' for
+		# future use.
+		cat << EOF > /etc/thig/thig-settings
+export PROVIDER=${provider}
+export ENVIRONMENT=$(echo ${servername} | awk -F- '{print $3}')
+export LOCATIONCODE=$(echo ${servername} | awk -F- '{print $1}')
+export OS=${os}
+export ROLE=$(echo ${servername} | awk -F- '{print $2}')
+export NODE=$(echo ${servername} | awk -F- '{print $4}')
+EOF
+	elif [[ ${provider} == ${PROVIDER_THIG} ]]; then
+	  # Create a default THIG configuration directory for on-prem THIG servers
+	  mkdir -p /etc/sdi
+
+	  #TODO: What needs to go here that isn't already in the *.ks boot file??
+	  #TODO: Or is that even how this should work anymore on-prem?
+  fi
+}
+
 # Determine the operating system of the virtual machine and return an ID
 # accordingly.
 #
@@ -80,63 +116,27 @@ get_provider () {
 	echo ${provider}
 }
 
+get_thig_env () {
+  export HOSTNAME=$(grep HOSTNAME /etc/sysconfig/network | awk -F= '{print $2}')
+  hostname $HOSTNAME
+  export SERVERNAME=$(hostname -s)
+  export ROLE=$(echo ${SERVERNAME:6:3} | tr [:upper:] [:lower:])
+
+}
 
 # Derives our environment configs from the hostname and writes out the relevant
 # values to a config file.
 #
 # Arguments: None
 # Returns: None
-export_thig_config () {
-	if [[ ${provider} == ${PROVIDER_AMAZON} ]]; then
 
-    # Create a default THIG configuration directory for aws servers
-    mkdir -p /etc/thig
-
-    # The hostname is assigned by the cloud-init boot configuration executed
-    # when an ec2 is started. From that we can determine the environment
-    # configuration items we'll need to execute the build.
-    #
-    # Expected AWS hostname convention:
-    #   ${locationCode}-${appRole}-${environment}-${node} -> aws-www-prod-01
-    #
-    local servername="$(hostname -s)"
-    local os="$(get_operating_system)"
-    local provider="$(get_provider)"
-
-		# Write our system configuration variables to '/etc/thig/thig-settings' for
-		# future use.
-		cat << EOF > /etc/thig/thig-settings
-export PROVIDER=${provider}
-export ENVIRONMENT=$(echo ${servername} | awk -F- '{print $3}')
-export LOCATIONCODE=$(echo ${servername} | awk -F- '{print $1}')
-export OS=${os}
-export ROLE=$(echo ${servername} | awk -F- '{print $2}')
-export NODE=$(echo ${servername} | awk -F- '{print $4}')
-EOF
-	elif [[ ${provider} == ${PROVIDER_THIG} ]]; then
-	  # Create a default THIG configuration directory for on-prem THIG servers
-	  mkdir -p /etc/sdi
-
-	  # The hostname for on-prem thig servers is configured in the thig Active
-	  # Directory DHCP/DNS configuration. When a VMWare VM comes up it determines
-	  # it's own hostname based on the reverse lookup of it's own ip address
-	  # assigned by DHCP).
-	  # TODO: figure out how to port the kickstart procedure that currently pulls
-      #   out the env config items from the on-prem hostname which is a little
-      #   uglier and requires some string slicing since it doesn't have an actual
-      #   delimiter for the sections of the name.
-	  cat << EOF > /etc/sdi/thig-settings
-
-EOF
-  fi
-}
 
 
 # Disable 'nullglob' shell option (to avoid glob matching issues)
 shopt -s nullglob
 
 # Generate THIG system configuration variables
-export_thig_config
+export_srvr_config
 
 # Pulling in the system variables we just exported
 source /etc/thig/thig-settings
