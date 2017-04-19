@@ -112,9 +112,9 @@ get_provider () {
 	# w/out hyphens it's THIG provided.
 	# * Amazon hostname example: aws-www-prod-01
 	# * THIG hostname example: sflgnvpps01
-	if [[ ${servername} =~ ^([A-Z][a-z]){9})[0-9]{2}$ ]]; then
+	if [[ ${servername} =~ ^([A-Z][a-z]){3}-([A-Z][a-z])*-([A-z][a-z][0-9]){0,4}-[0-9]{2}$ ]]; then
 		provider="${PROVIDER_AMAZON}"
-	elif [[ ${servername} =~ ^([A-Z][a-z]){3}-([A-Z][a-z])$ ]]; then
+	elif [[ ${servername} =~ ^([A-Z][a-z]){9})[0-9]{2}$ ]]; then
 		provider="${PROVIDER_THIG}"
 	else
 	  provider="${PROVIDER_UNKNOWN}"
