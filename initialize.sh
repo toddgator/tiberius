@@ -22,6 +22,7 @@ LOG_TIMESTAMP="$(date +"%m-%d-%Y %H:%M:%S")"
 # GLOBALS - provider codes
 PROVIDER_AMAZON="aws"
 PROVIDER_THIG="thig"
+PROVIDER_UNKNOWN="unknown"
 
 
 export_srvr_config () {
@@ -104,13 +105,19 @@ get_os_code () {
 # Returns: String
 get_provider () {
 	local servername="$(hostname -s)"
+	local provider=""
 	
 	# If the hostname contains hyphens then we can consider it AWS provided,
-	# while if it is an 11 character string w/out hyphens it's THIG provided.
-	if [[ ${servername} == *"-"* ]]; then
+	# while if it is an 11 character string(9 letters followed with 2 digits)
+	# w/out hyphens it's THIG provided.
+	# * Amazon hostname example: aws-www-prod-01
+	# * THIG hostname example: sflgnvpps01
+	if [[ ${servername} =~ ^([A-Z][a-z]){9})[0-9]{2}$ ]]; then
 		provider="${PROVIDER_AMAZON}"
-	else
+	elif [[ ${servername} =~ ^([A-Z][a-z]){3}-([A-Z][a-z])$ ]]; then
 		provider="${PROVIDER_THIG}"
+	else
+	  provider="${PROVIDER_UNKNOWN}"
 	fi
 	
 	echo ${provider}
@@ -150,10 +157,10 @@ source /etc/thig/thig-settings
   else
     # This loop executes all the scripts relevant to the particular os, role,
     # and environment designated for the build.
-    for script in ${PROJECT_HOME}/os/${OS}/all/*.sh \
-        ${PROJECT_HOME}/os/${OS}/roles/all/*.sh \
-        ${PROJECT_HOME}/os/${OS}/roles/${ROLE}/all/*.sh \
-        ${PROJECT_HOME}/os/${OS}/roles/${ROLE}/${ENVIRONMENT}/*.sh
+    for script in ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/all/*.sh \
+        ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/all/*.sh \
+        ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/all/*.sh \
+        ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/${ENVIRONMENT}/*.sh
     do
       echo "${LOG_TIMESTAMP} - Attempting to execute ${script}"
       /bin/bash ${script}
