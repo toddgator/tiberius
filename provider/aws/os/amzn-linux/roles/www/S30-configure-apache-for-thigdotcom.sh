@@ -1,0 +1,1 @@
+../../../../../../library/amzn-linux/S30-configure-apache-for-thigdotcom.sh
