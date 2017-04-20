@@ -24,7 +24,7 @@ LOG_TIMESTAMP="$(date +"%m-%d-%Y %H:%M:%S")"
 THIG_ETC_ROOT="/etc/sdi"
 AWS_ETC_ROOT="/etc/thig"
 
-# Globals - provider codes ("declare -r" keeps the provider codes immutable)
+# Globals - Provider codes ("declare -r" keeps the provider codes immutable)
 declare -r PROVIDER_AMAZON="aws"
 declare -r PROVIDER_THIG="thig"
 declare -r PROVIDER_UNKNOWN="unknown"
@@ -95,12 +95,15 @@ get_thig_os_code () {
     ${lsb_code_amazon})
       echo ${thig_code_amazon}
       ;;
+
     ${lsb_code_redhat})
       echo ${thig_code_redhat}
       ;;
+
     ${lsb_code_ubuntu})
       echo ${thig_code_ubuntu}
       ;;
+
     *)
       echo "unknown"
       ;;
@@ -130,6 +133,7 @@ get_provider () {
 	# Amazon hostname example: aws-www-prod-01
 	# Thig hostname example: sflgnvpps01
 
+  # Wanted this to be a case switch statement, but regex doesn't work with case.
 	if [[ "${servername}" =~ ${amzn_hostname_regex_match} ]]; then
 		provider="${PROVIDER_AMAZON}"
 	elif [[ "${servername}" =~ ${thig_hostname_regex_match} ]]; then
