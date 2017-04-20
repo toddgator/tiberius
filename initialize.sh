@@ -12,21 +12,22 @@
 #     in order for the respective OS lsb_release ID to be reported.
 
 
-# GLOBALS
-THIG_PROJECT_HOME="/opt/thig"
-PROJECT_NAME="tiberius"
-PROJECT_HOME="${THIG_PROJECT_HOME}/${PROJECT_NAME}"
-LOG_FULL_PATH="/var/log/tiberuis-build-output.log"
+# Globals - Basic project env
+THIG_OPT_ROOT="/opt/thig"
+APPLICATION_NAME="tiberius"
+APPLICATION_ROOT="${THIG_OPT_ROOT}/${APPLICATION_NAME}"
+
+# Globals - Logging
+FD_LOG_PATH="/var/log/tiberuis-build-output.log"
 LOG_TIMESTAMP="$(date +"%m-%d-%Y %H:%M:%S")"
 
-# Globals - Default env variable configuration directory
-THIG_ETC_CONFIG_DIR="/etc/sdi"
-AWS_ETC_CONFIG_DIR="/etc/thig"
+THIG_ETC_ROOT="/etc/sdi"
+AWS_ETC_ROOT="/etc/thig"
 
-# GLOBALS - provider codes
-PROVIDER_AMAZON="aws"
-PROVIDER_THIG="thig"
-PROVIDER_UNKNOWN="unknown"
+# Globals - provider codes ("declare -r" keeps the provider codes immutable)
+declare -r PROVIDER_AMAZON="aws"
+declare -r PROVIDER_THIG="thig"
+declare -r PROVIDER_UNKNOWN="unknown"
 
 
 # Method determines our environment configs from the hostname and writes out
@@ -35,17 +36,19 @@ PROVIDER_UNKNOWN="unknown"
 # Arguments: None
 # Returns: None
 export_srvr_config () {
-  local provider=$1
-  local os=$2
+  local provider="$1"
+  local os="$2"
   local settings_filename="thig-settings"
   local servername
 
+  # Getting the hostname from the system's 'hostname' utility (using the '-s'
+  # option gives only the base name without the domain section of the FQDN)
   servername="$(hostname -s)"
 
   case "${provider}" in
     ${PROVIDER_AMAZON})
-      mkdir -p ${AWS_ETC_CONFIG_DIR}
-      cat << EOF > ${AWS_ETC_CONFIG_DIR}/${settings_filename}
+      mkdir -p ${AWS_ETC_ROOT}
+      cat << EOF > ${AWS_ETC_ROOT}/${settings_filename}
 export LOCATIONCODE=$(echo ${servername} | awk -F- '{print $1}')
 export ROLE=$(echo ${servername} | awk -F- '{print $2}')
 export ENVIRONMENT=$(echo ${servername} | awk -F- '{print $3}')
@@ -58,7 +61,7 @@ EOF
 
     ${PROVIDER_THIG})
       # TODO: Does the kickstart already do this part of the build for Thig?
-      [ -d ${THIG_ETC_CONFIG_DIR} ] || mkdir -p ${THIG_ETC_CONFIG_DIR}
+      [ -d ${THIG_ETC_ROOT} ] || mkdir -p ${THIG_ETC_ROOT}
       ;;
 
     *)
@@ -110,7 +113,7 @@ get_thig_os_code () {
 # THIG style hostname: sflgnvrpm01.thig.com
 # 
 # Arguments: None
-# Returns: String
+# Returns: String (thig provider code)
 get_provider () {
 	local servername
 	local provider
@@ -151,14 +154,16 @@ main () {
   case "${PROVIDER}" in
     ${PROVIDER_AMAZON})
       echo "${LOG_TIMESTAMP} - importing aws ec2 env configuration..."
-      source ${AWS_ETC_CONFIG_DIR}/thig-settings
+      source ${AWS_ETC_ROOT}/thig-settings
       echo "${LOG_TIMESTAMP} - done"
       ;;
+
     ${PROVIDER_THIG})
       echo "${LOG_TIMESTAMP} - importing thig VM env configuration..."
-      source ${THIG_ETC_CONFIG_DIR}/thig-settings
+      source ${THIG_ETC_ROOT}/thig-settings
       echo "${LOG_TIMESTAMP} - done"
       ;;
+
     *)
       # You should never end up here!!!!!!!
       echo "${LOG_TIMESTAMP} - Unable to set up environment variables for \"unknown\" virtual provider"
@@ -179,10 +184,10 @@ main () {
       # This loop executes all the scripts relevant to the particular os, role,
       # and environment designated for the build.
       echo "${LOG_TIMESTAMP} - Executing build..."
-      for script in ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/all/*.sh \
-          ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/all/*.sh \
-          ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/all/*.sh \
-          ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/${ENVIRONMENT}/*.sh
+      for script in ${APPLICATION_ROOT}provider/${PROVIDER}/os/${OS}/all/*.sh \
+          ${APPLICATION_ROOT}provider/${PROVIDER}/os/${OS}/roles/all/*.sh \
+          ${APPLICATION_ROOT}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/all/*.sh \
+          ${APPLICATION_ROOT}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/${ENVIRONMENT}/*.sh
       do
         echo "${LOG_TIMESTAMP} - Attempting to execute ${script}"
         /bin/bash ${script}
@@ -190,7 +195,7 @@ main () {
       done
       echo "${LOG_TIMESTAMP} - ...build completed!"
     fi
-  ) &> ${LOG_FULL_PATH}
+  ) &> ${FD_LOG_PATH}
 }
 
 main "$@"
