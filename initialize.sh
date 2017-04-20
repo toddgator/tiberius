@@ -153,28 +153,28 @@ main () {
 
   case "${PROVIDER}" in
     ${PROVIDER_AMAZON})
-      echo "${LOG_TIMESTAMP} - importing aws ec2 env configuration..."
+      echo "${LOG_TIMESTAMP} - importing aws ec2 env configuration..." >> ${FD_LOG_PATH}
       source ${AWS_ETC_ROOT}/thig-settings
-      echo "${LOG_TIMESTAMP} - done"
+      echo "${LOG_TIMESTAMP} - done" >> ${FD_LOG_PATH}
       ;;
 
     ${PROVIDER_THIG})
-      echo "${LOG_TIMESTAMP} - importing thig VM env configuration..."
+      echo "${LOG_TIMESTAMP} - importing thig VM env configuration..." >> ${FD_LOG_PATH}
       source ${THIG_ETC_ROOT}/thig-settings
-      echo "${LOG_TIMESTAMP} - done"
+      echo "${LOG_TIMESTAMP} - done" >> ${FD_LOG_PATH}
       ;;
 
     *)
       # You should never end up here!!!!!!!
-      echo "${LOG_TIMESTAMP} - Unable to set up environment variables for \"unknown\" virtual provider"
-      echo "${LOG_TIMESTAMP} - Exiting..."
+      echo "${LOG_TIMESTAMP} - Unable to set up environment variables for \"unknown\" virtual provider" >> ${FD_LOG_PATH}
+      echo "${LOG_TIMESTAMP} - Exiting..." >> ${FD_LOG_PATH}
       exit
       ;;
   esac
 
   # Surrounding the actual installation script executions in parens (is this
-  # what people are calling them these days??) so as to redirect output to log
-  # file.
+  # what people are calling them these days??) so as to redirect all output to
+  # log file.
   (
     if [ "${PROVIDER}" = "unknown" ] || [ -z "${PROVIDER}" ]; then
       echo "${LOG_TIMESTAMP} - Unable to determine our virtual machine provider"
@@ -184,10 +184,11 @@ main () {
       # This loop executes all the scripts relevant to the particular os, role,
       # and environment designated for the build.
       echo "${LOG_TIMESTAMP} - Executing build..."
-      for script in ${APPLICATION_ROOT}provider/${PROVIDER}/os/${OS}/all/*.sh \
-          ${APPLICATION_ROOT}provider/${PROVIDER}/os/${OS}/roles/all/*.sh \
-          ${APPLICATION_ROOT}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/all/*.sh \
-          ${APPLICATION_ROOT}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/${ENVIRONMENT}/*.sh
+      for script in \
+          ${APPLICATION_ROOT}/provider/${PROVIDER}/os/${OS}/all/*.sh \
+          ${APPLICATION_ROOT}/provider/${PROVIDER}/os/${OS}/roles/all/*.sh \
+          ${APPLICATION_ROOT}/provider/${PROVIDER}/os/${OS}/roles/${ROLE}/all/*.sh \
+          ${APPLICATION_ROOT}/provider/${PROVIDER}/os/${OS}/roles/${ROLE}/${ENVIRONMENT}/*.sh
       do
         echo "${LOG_TIMESTAMP} - Attempting to execute ${script}"
         /bin/bash ${script}
