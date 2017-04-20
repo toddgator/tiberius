@@ -159,13 +159,13 @@ main () {
     ${PROVIDER_AMAZON})
       echo "${LOG_TIMESTAMP} - importing aws ec2 env configuration..." >> ${FD_LOG_PATH}
       source ${AWS_ETC_ROOT}/thig-settings
-      echo "${LOG_TIMESTAMP} - done" >> ${FD_LOG_PATH}
+      echo "${LOG_TIMESTAMP} - ...done" >> ${FD_LOG_PATH}
       ;;
 
     ${PROVIDER_THIG})
       echo "${LOG_TIMESTAMP} - importing thig VM env configuration..." >> ${FD_LOG_PATH}
       source ${THIG_ETC_ROOT}/thig-settings
-      echo "${LOG_TIMESTAMP} - done" >> ${FD_LOG_PATH}
+      echo "${LOG_TIMESTAMP} - ...done" >> ${FD_LOG_PATH}
       ;;
 
     *)
