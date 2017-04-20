@@ -20,8 +20,8 @@ LOG_FULL_PATH="/var/log/tiberuis-build-output.log"
 LOG_TIMESTAMP="$(date +"%m-%d-%Y %H:%M:%S")"
 
 # Globals - Default env variable configuration directory
-THIG_ETC_DIR="/etc/sdi"
-AWS_ETC_DIR="/etc/thig"
+THIG_ETC_CONFIG_DIR="/etc/sdi"
+AWS_ETC_CONFIG_DIR="/etc/thig"
 
 # GLOBALS - provider codes
 PROVIDER_AMAZON="aws"
@@ -35,71 +35,68 @@ PROVIDER_UNKNOWN="unknown"
 # Arguments: None
 # Returns: None
 export_srvr_config () {
-	if [[ ${provider} == ${PROVIDER_AMAZON} ]]; then
+  local provider=$1
+  local os=$2
+  local settings_filename="thig-settings"
+  local servername
 
-    # Create a default Thig configuration directory for aws servers
-    mkdir -p ${AWS_ETC_DIR}
+  servername="$(hostname -s)"
 
-    # The hostname is assigned by the cloud-init boot configuration executed
-    # when an ec2 is started. From that we can determine the environment
-    # configuration items we'll need to execute the build.
-    #
-    # Expected AWS hostname convention:
-    #   ${locationCode}-${appRole}-${environment}-${node} -> aws-www-prod-01
-    #
-    local servername="$(hostname -s)"
-    local os="$(get_operating_system)"
-    local provider="$(get_provider)"
-
-		# Write our system configuration variables to '/etc/thig/thig-settings' for
-		# future use.
-		cat << EOF > /etc/thig/thig-settings
-export PROVIDER=${provider}
-export ENVIRONMENT=$(echo ${servername} | awk -F- '{print $3}')
+  case "${provider}" in
+    ${PROVIDER_AMAZON})
+      mkdir -p ${AWS_ETC_CONFIG_DIR}
+      cat << EOF > ${AWS_ETC_CONFIG_DIR}/${settings_filename}
 export LOCATIONCODE=$(echo ${servername} | awk -F- '{print $1}')
-export OS=${os}
 export ROLE=$(echo ${servername} | awk -F- '{print $2}')
+export ENVIRONMENT=$(echo ${servername} | awk -F- '{print $3}')
 export NODE=$(echo ${servername} | awk -F- '{print $4}')
-EOF
-	elif [[ ${provider} == ${PROVIDER_THIG} ]]; then
-	  # Create a default THIG configuration directory for on-prem THIG servers
-	  if [ ! -d ${THIG_ETC_DIR} ]; then
-	    mkdir -p ${THIG_ETC_DIR}
-	  fi
+export PROVIDER=${provider}
+export OS=${os}
 
-	  #TODO: What needs to go here that isn't already in the *.ks boot file??
-	  #TODO: Or is that even how this should work anymore on-prem?
-  fi
+EOF
+      ;;
+
+    ${PROVIDER_THIG})
+      # TODO: Does the kickstart already do this part of the build for Thig?
+      [ -d ${THIG_ETC_CONFIG_DIR} ] || mkdir -p ${THIG_ETC_CONFIG_DIR}
+      ;;
+
+    *)
+      # TODO: Should we technically be exiting with an error code at this point?
+      ;;
+  esac
 }
 
 # Determine the operating system of the virtual machine and return an ID
 # accordingly.
 #
 # Arguments: None
-# Returns: string
-get_os_code () {
+# Returns: string (os code)
+get_thig_os_code () {
+  local lsb_os_code
+
   # IDs returned by the respective distros via the 'lsb_release' util
-  local amazon_lsb_code="AmazonAMI"
-  local redhat_lsb_code="RedHatEnterpriseServer"
-  local ubuntu_lsb_code="ubuntu"
+  local lsb_code_amazon="AmazonAMI"
+  local lsb_code_redhat="RedHatEnterpriseServer"
+  local lsb_code_ubuntu="ubuntu"
 
   # THIG codenames for the distros
-  local thig_amazon_code="amzn-linux"
-  local thig_redhat_code="redhat"
-  local thig_ubuntu_code="ubuntu"
+  local thig_code_amazon="amzn-linux"
+  local thig_code_redhat="redhat"
+  local thig_code_ubuntu="ubuntu"
 
   # Note - xargs just used to strip whitespace
-  os_code=$(lsb_release -i | awk -F: '{print $2}' | xargs)
+  lsb_os_code=$(lsb_release -i | awk -F: '{print $2}' | xargs)
 
-  case "${os_code}" in
-    ${amazon_lsb_code})
-      echo ${thig_amazon_code}
+  case "${lsb_os_code}" in
+    ${lsb_code_amazon})
+      echo ${thig_code_amazon}
       ;;
-    ${redhat_lsb_code})
-      echo ${thig_redhat_code}
+    ${lsb_code_redhat})
+      echo ${thig_code_redhat}
       ;;
-    ${ubuntu_lsb_code})
-      echo ${thig_ubuntu_code}
+    ${lsb_code_ubuntu})
+      echo ${thig_code_ubuntu}
       ;;
     *)
       echo "unknown"
@@ -115,21 +112,24 @@ get_os_code () {
 # Arguments: None
 # Returns: String
 get_provider () {
-	local servername="$(hostname -s)"
-	local provider=""
+	local servername
+	local provider
 
-	local amzn_host_regex_str="^([A-Z][a-z]){3}-([A-Z][a-z])+-([A-z][a-z][0-9]){3,4}-[0-9]{2}$"
-  local thig_host_regex_str="^([A-Z][a-z]){9})[0-9]{2}$"
-	
-	# If the hostname contains hyphens then we consider it AWS provided, but if
-	# it's an 11 character string (9 letters followed with 2 digits) w/out hyphens
-	# it's provided on-prem by Thig.
+	local amzn_hostname_regex_match="^[a-zA-Z0-9]{3}-[a-zA-Z0-9]+-[a-zA-Z0-9]+-[0-9]{2}"
+  local thig_hostname_regex_match="^[a-z]{9}[0-9]{2}"
+
+	servername="$(hostname -s)"
+
+	# If a hostname contains 4 sections delimited by hyphens then we define it as
+	# provided by AWS. If it's a single string with 11 characters (9 lowercase
+	# letters followed by 2 digits) then we define it as provided on-prem @thig.
 	#
 	# Amazon hostname example: aws-www-prod-01
 	# Thig hostname example: sflgnvpps01
-	if [[ ${servername} =~ "${amzn_host_regex_str}" ]]; then
+
+	if [[ "${servername}" =~ ${amzn_hostname_regex_match} ]]; then
 		provider="${PROVIDER_AMAZON}"
-	elif [[ ${servername} =~ "${thig_host_regex_str}" ]]; then
+	elif [[ "${servername}" =~ ${thig_hostname_regex_match} ]]; then
 		provider="${PROVIDER_THIG}"
 	else
 	  provider="${PROVIDER_UNKNOWN}"
@@ -138,76 +138,59 @@ get_provider () {
 	echo ${provider}
 }
 
-get_thig_env () {
-  export HOSTNAME=$(grep HOSTNAME /etc/sysconfig/network | awk -F= '{print $2}')
-  hostname $HOSTNAME
-  export SERVERNAME=$(hostname -s)
-  export ROLE=$(echo ${SERVERNAME:6:3} | tr [:upper:] [:lower:])
+
+main () {
+  # Disable 'nullglob' shell option (to avoid glob matching issues)
+  shopt -s nullglob
+
+  # Define and export our build configuration variables
+  virtual_provider=$(get_provider)
+  thig_os_code=$(get_thig_os_code)
+  export_srvr_config "${virtual_provider}" "${os_code}"
+
+  case "${PROVIDER}" in
+    ${PROVIDER_AMAZON})
+      echo "${LOG_TIMESTAMP} - importing aws ec2 env configuration..."
+      source ${AWS_ETC_CONFIG_DIR}/thig-settings
+      echo "${LOG_TIMESTAMP} - done"
+      ;;
+    ${PROVIDER_THIG})
+      echo "${LOG_TIMESTAMP} - importing thig VM env configuration..."
+      source ${THIG_ETC_CONFIG_DIR}/thig-settings
+      echo "${LOG_TIMESTAMP} - done"
+      ;;
+    *)
+      # You should never end up here!!!!!!!
+      echo "${LOG_TIMESTAMP} - Unable to set up environment variables for \"unknown\" virtual provider"
+      echo "${LOG_TIMESTAMP} - Exiting..."
+      exit
+      ;;
+  esac
+
+  # Surrounding the actual installation script executions in parens (is this
+  # what people are calling them these days??) so as to redirect output to log
+  # file.
+  (
+    if [ "${PROVIDER}" = "unknown" ] || [ -z "${PROVIDER}" ]; then
+      echo "${LOG_TIMESTAMP} - Unable to determine our virtual machine provider"
+      echo "Exiting..."
+      exit
+    else
+      # This loop executes all the scripts relevant to the particular os, role,
+      # and environment designated for the build.
+      echo "${LOG_TIMESTAMP} - Executing build..."
+      for script in ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/all/*.sh \
+          ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/all/*.sh \
+          ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/all/*.sh \
+          ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/${ENVIRONMENT}/*.sh
+      do
+        echo "${LOG_TIMESTAMP} - Attempting to execute ${script}"
+        /bin/bash ${script}
+        echo "${LOG_TIMESTAMP} - Completed ${script}"
+      done
+      echo "${LOG_TIMESTAMP} - ...build completed!"
+    fi
+  ) &> ${LOG_FULL_PATH}
 }
 
-
-# Disable 'nullglob' shell option (to avoid glob matching issues)
-shopt -s nullglob
-
-# Generate system configuration variables
-export_srvr_config
-
-# Replacing the ugly if/then down below.
-case "${PROVIDER}" in
-  ${PROVIDER_AMAZON})
-    echo "${LOG_TIMESTAMP} - importing aws ec2 env configuration..."
-    source ${AWS_ETC_DIR}/thig-settings
-    echo "${LOG_TIMESTAMP} - done"
-    ;;
-  ${PROVIDER_THIG})
-    echo "${LOG_TIMESTAMP} - importing thig VM env configuration..."
-    source ${THIG_ETC_DIR}/thig-settings
-    echo "${LOG_TIMESTAMP} - done"
-    ;;
-  *)
-    # You should never end up here!!!!!!!
-    echo "${LOG_TIMESTAMP} - Unable to set up environment variables for \"unknown\" virtual provider"
-    echo "${LOG_TIMESTAMP} - Exiting..."
-    exit
-    ;;
-esac
-
-# Importing the system variables we just wrote out to the filesystem
-#if [ "${PROVIDER}" = "${PROVIDER_AMAZON}" ]; then
-#  echo "${LOG_TIMESTAMP} - importing aws ec2 env configuration..."
-#  source ${AWS_ETC_DIR}/thig-settings
-#  echo "${LOG_TIMESTAMP} - done"
-#elif [ "${PROVIDER}" = "${PROVIDER_THIG}" ]; then
-#  echo "${LOG_TIMESTAMP} - importing thig VM env configuration..."
-#  source ${THIG_ETC_DIR}/thig-settings
-#  echo "${LOG_TIMESTAMP} - done"
-#else
-#  # You should never end up here!!!!!!!
-#  echo "${LOG_TIMESTAMP} - Unable to set up environment variables for \"unknown\" virtual provider"
-#  echo "${LOG_TIMESTAMP} - Exiting..."
-#  exit
-#fi
-
-# Surrounding the actual script executions in parens (is this what people are
-# calling them these days??) so as to redirect output to log file.
-(
-  if [ "${PROVIDER}" = "unknown" ] || [ -z "${PROVIDER}" ]; then
-    echo "${LOG_TIMESTAMP} - Unable to determine our virtual machine provider"
-    echo "Exiting..."
-    exit
-  else
-    # This loop executes all the scripts relevant to the particular os, role,
-    # and environment designated for the build.
-    echo "${LOG_TIMESTAMP} - Executing build..."
-    for script in ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/all/*.sh \
-        ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/all/*.sh \
-        ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/all/*.sh \
-        ${PROJECT_HOME}provider/${PROVIDER}/os/${OS}/roles/${ROLE}/${ENVIRONMENT}/*.sh
-    do
-      echo "${LOG_TIMESTAMP} - Attempting to execute ${script}"
-      /bin/bash ${script}
-      echo "${LOG_TIMESTAMP} - Completed ${script}"
-    done
-    echo "${LOG_TIMESTAMP} - ...build completed!"
-  fi
-) &> ${LOG_FULL_PATH}
+main "$@"
