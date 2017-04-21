@@ -16,22 +16,24 @@
 # github repository.
 #
 # Arguments: None
-# Returns: None
+# Returns: String (project name; which is the dir we create)
 get_apache24_configs_repo () {
-github_user="thig"
-github_path="git@github.thig.com:IT-Operations/thig-apache2.4-site-configs.git"
+local github_project_name="aws-apache24-site-configs.git"
+local toddgator_github_user="toddgatorthig"
+local toddgator_github_path="https://github.com/toddgator/${github_project_name}"
 
-su - ec2-user -c "git clone ${github_path}"
+su - ${toddgator_github_user} -c "git clone ${toddgator_github_path}"
+
+# Return the name of the directory we just created
+echo ${github_project_name}
 }
 
 
 # Begin
-orig_working_dir="$(pwd)" # get current working dir
-
 cd /tmp
-get_apache24_configs_repo
 
+repo_directory=$(get_apache24_configs_repo)
+/tmp/${repo_directory}/install.sh
 
-
-
-cd ${current_working_dir}
+# Return to the directory where we were before moving to /tmp
+cd -
