@@ -3,7 +3,7 @@
 # Updates the Apache configuration as needed in order to create a production
 # www.thig.com virtual host.
 
-# Notes:
+# Note:
 #   This script is intended for use on a base install of Apache/PHP and not
 # a server that already has some level of customized configuration or
 # pre-existing non-default virtual host(s). Since www.thig.com, as served in
@@ -16,7 +16,7 @@
 # github repository.
 #
 # Arguments: None
-# Returns: String (project name; which is the dir we create)
+# Returns: String (project name; which is the directory we create)
 get_apache24_configs_repo () {
 local github_project_name="aws-apache24-site-configs.git"
 local toddgator_github_user="toddgatorthig"
@@ -24,7 +24,7 @@ local toddgator_github_path="https://github.com/toddgator/${github_project_name}
 
 su - ${toddgator_github_user} -c "git clone ${toddgator_github_path}"
 
-# Return the name of the directory we just created
+# Return the name of the directory we just created using 'git clone'
 echo ${github_project_name}
 }
 
